@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barber Lake - Construction Schedule</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e4e4e7;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 0.95rem;
+        }
+
+        .project-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .info-card {
+            background: rgba(59, 130, 246, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .info-card label {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-card .value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #60a5fa;
+            margin-top: 4px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.05);
+            color: #e4e4e7;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: rgba(59, 130, 246, 0.3);
+            border-color: #60a5fa;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            padding: 15px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+
+        .gantt-container {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+        }
+
+        .gantt-header {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            background: rgba(0,0,0,0.3);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .task-header {
+            padding: 12px 16px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            border-right: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .timeline-header {
+            display: flex;
+            overflow-x: auto;
+        }
+
+        .month-label {
+            min-width: 60px;
+            padding: 12px 8px;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            border-right: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .month-label.year-start {
+            border-left: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .gantt-body {
+            max-height: 70vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .gantt-row {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: background 0.2s;
+        }
+
+        .gantt-row:hover {
+            background: rgba(255,255,255,0.03);
+        }
+
+        .gantt-row.phase-header {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .gantt-row.phase-header .task-name {
+            font-weight: 700;
+            color: #60a5fa;
+        }
+
+        .task-cell {
+            padding: 10px 16px;
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .task-name {
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .task-indent-1 { padding-left: 32px; }
+        .task-indent-2 { padding-left: 48px; }
+
+        .task-duration {
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-left: auto;
+            white-space: nowrap;
+        }
+
+        .timeline-cell {
+            position: relative;
+            height: 40px;
+            display: flex;
+            align-items: center;
+        }
+
+        .bar {
+            position: absolute;
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .bar:hover {
+            transform: scaleY(1.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 5;
+        }
+
+        .bar.engineering { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+        .bar.procurement { background: linear-gradient(90deg, #6366f1, #818cf8); }
+        .bar.substation { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .bar.sitework { background: linear-gradient(90deg, #14b8a6, #2dd4bf); }
+        .bar.building { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+        .bar.datamodule { background: linear-gradient(90deg, #0ea5e9, #38bdf8); }
+        .bar.commissioning { background: linear-gradient(90deg, #ec4899, #f472b6); }
+        .bar.closeout { background: linear-gradient(90deg, #64748b, #94a3b8); }
+        .bar.milestone { background: linear-gradient(90deg, #22c55e, #4ade80); }
+        .bar.phase { background: linear-gradient(90deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); border: 1px solid rgba(255,255,255,0.2); }
+
+        .milestone-marker {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 16px solid #fbbf24;
+            transform: translateX(-10px);
+            cursor: pointer;
+        }
+
+        .milestone-marker:hover::after {
+            content: attr(data-label);
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            white-space: nowrap;
+            z-index: 10;
+        }
+
+        .grid-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            pointer-events: none;
+        }
+
+        .grid-line {
+            min-width: 60px;
+            border-right: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .grid-line.year-start {
+            border-right: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .tooltip {
+            position: fixed;
+            background: #1e293b;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            max-width: 300px;
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+        }
+
+        .tooltip-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #60a5fa;
+        }
+
+        .tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .tooltip-label {
+            color: #94a3b8;
+        }
+
+        .tooltip-progress {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-bar-fill.complete { background: linear-gradient(90deg, #22c55e, #4ade80); }
+        .progress-bar-fill.high { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+        .progress-bar-fill.medium { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .progress-bar-fill.low { background: linear-gradient(90deg, #ef4444, #f87171); }
+        .progress-bar-fill.not-started { background: rgba(255,255,255,0.2); }
+
+        .progress-percentage {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .progress-percentage.complete { color: #4ade80; }
+        .progress-percentage.high { color: #60a5fa; }
+        .progress-percentage.medium { color: #fbbf24; }
+        .progress-percentage.low { color: #f87171; }
+        .progress-percentage.not-started { color: #94a3b8; }
+
+        .summary-section {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .summary-card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 20px;
+        }
+
+        .summary-card h3 {
+            font-size: 1rem;
+            color: #60a5fa;
+            margin-bottom: 15px;
+        }
+
+        .phase-summary {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .phase-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 6px;
+        }
+
+        .phase-item .name {
+            font-weight: 500;
+        }
+
+        .phase-item .dates {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        @media (max-width: 768px) {
+            .gantt-header, .gantt-row {
+                grid-template-columns: 200px 1fr;
+            }
+
+            .task-cell {
+                padding: 8px 12px;
+            }
+
+            .task-name {
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Barber Lake - Construction Schedule</h1>
+            <p class="subtitle">Cipher Mining Data Center | June 2025 - July 2027</p>
+
+            <div class="project-info">
+                <div class="info-card">
+                    <label>Project Status</label>
+                    <div class="value">17% Complete</div>
+                </div>
+                <div class="info-card">
+                    <label>Data Modules</label>
+                    <div class="value">5 Modules</div>
+                </div>
+                <div class="info-card">
+                    <label>Total Duration</label>
+                    <div class="value">828 Days</div>
+                </div>
+                <div class="info-card">
+                    <label>Project Start</label>
+                    <div class="value">Jun 2025</div>
+                </div>
+                <div class="info-card">
+                    <label>Project End</label>
+                    <div class="value">Jul 2027</div>
+                </div>
+                <div class="info-card">
+                    <label>RFS Milestones</label>
+                    <div class="value">4 Phases</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="controls">
+            <button class="filter-btn active" data-filter="all">All Phases</button>
+            <button class="filter-btn" data-filter="engineering">Engineering</button>
+            <button class="filter-btn" data-filter="procurement">Procurement</button>
+            <button class="filter-btn" data-filter="construction">Construction</button>
+            <button class="filter-btn" data-filter="commissioning">Commissioning</button>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-color" style="background: linear-gradient(90deg, #8b5cf6, #a78bfa);"></div>Engineering</div>
+            <div class="legend-item"><div class="legend-color" style="background: linear-gradient(90deg, #6366f1, #818cf8);"></div>Procurement</div>
+            <div class="legend-item"><div class="legend-color" style="background: linear-gradient(90deg, #f59e0b, #fbbf24);"></div>Substation</div>
+            <div class="legend-item"><div class="legend-color" style="background: linear-gradient(90deg, #14b8a6, #2dd4bf);"></div>Site Work</div>
+            <div class="legend-item"><div class="legend-color" style="background: linear-gradient(90deg, #3b82f6, #60a5fa);"></div>Building</div>
+            <div class="legend-item"><div class="legend-color" style="background: linear-gradient(90deg, #0ea5e9, #38bdf8);"></div>Data Module</div>
+            <div class="legend-item"><div class="legend-color" style="background: linear-gradient(90deg, #ec4899, #f472b6);"></div>Commissioning</div>
+            <div class="legend-item"><div class="legend-color" style="background: linear-gradient(90deg, #22c55e, #4ade80);"></div>Milestone</div>
+        </div>
+
+        <div class="gantt-container">
+            <div class="gantt-header">
+                <div class="task-header">Task Name</div>
+                <div class="timeline-header" id="timeline-header"><div class="month-label">Jun '25</div><div class="month-label">Jul</div><div class="month-label">Aug</div><div class="month-label">Sep</div><div class="month-label">Oct</div><div class="month-label">Nov</div><div class="month-label">Dec</div><div class="month-label year-start">Jan '26</div><div class="month-label">Feb</div><div class="month-label">Mar</div><div class="month-label">Apr</div><div class="month-label">May</div><div class="month-label">Jun</div><div class="month-label">Jul</div><div class="month-label">Aug</div><div class="month-label">Sep</div><div class="month-label">Oct</div><div class="month-label">Nov</div><div class="month-label">Dec</div><div class="month-label year-start">Jan '27</div><div class="month-label">Feb</div><div class="month-label">Mar</div><div class="month-label">Apr</div><div class="month-label">May</div><div class="month-label">Jun</div><div class="month-label">Jul</div></div>
+            </div>
+            <div class="gantt-body" id="gantt-body"><div class="gantt-row phase-header" data-phase="all"><div class="task-cell "><span class="task-name">KEY MILESTONES</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div></div></div><div class="gantt-row " data-phase="all"><div class="task-cell task-indent-1"><span class="task-name">C&amp;S Start Site Work</span><span class="task-duration">Jun 18, 2025</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="milestone-marker" style="left: 10px" data-label="C&amp;S Start Site Work" data-pct="100"></div></div></div><div class="gantt-row " data-phase="all"><div class="task-cell task-indent-1"><span class="task-name">Start Shell</span><span class="task-duration">Oct 06, 2025</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="milestone-marker" style="left: 250px" data-label="Start Shell" data-pct="0"></div></div></div><div class="gantt-row " data-phase="all"><div class="task-cell task-indent-1"><span class="task-name">Shell Weather Tight</span><span class="task-duration">Jan 05, 2026</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="milestone-marker" style="left: 430px" data-label="Shell Weather Tight" data-pct="0"></div></div></div><div class="gantt-row " data-phase="all"><div class="task-cell task-indent-1"><span class="task-name">RFS-1</span><span class="task-duration">Apr 28, 2026</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="milestone-marker" style="left: 610px" data-label="RFS-1" data-pct="0"></div></div></div><div class="gantt-row " data-phase="all"><div class="task-cell task-indent-1"><span class="task-name">RFS-2</span><span class="task-duration">Jun 23, 2026</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="milestone-marker" style="left: 730px" data-label="RFS-2" data-pct="0"></div></div></div><div class="gantt-row " data-phase="all"><div class="task-cell task-indent-1"><span class="task-name">RFS-3</span><span class="task-duration">Nov 24, 2026</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="milestone-marker" style="left: 1030px" data-label="RFS-3" data-pct="0"></div></div></div><div class="gantt-row " data-phase="all"><div class="task-cell task-indent-1"><span class="task-name">RFS-4</span><span class="task-duration">Jul 30, 2027</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="milestone-marker" style="left: 1510px" data-label="RFS-4" data-pct="0"></div></div></div><div class="gantt-row phase-header" data-phase="engineering"><div class="task-cell "><span class="task-name">ENGINEERING</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div></div></div><div class="gantt-row " data-phase="engineering"><div class="task-cell task-indent-1"><span class="task-name">Civil</span><span class="task-duration">3mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar engineering" style="left: 0px; width: 176px" data-task="Civil" data-start="0" data-duration="3" data-type="engineering" data-pct="100">
+                            Civil
+                        </div></div></div><div class="gantt-row " data-phase="engineering"><div class="task-cell task-indent-1"><span class="task-name">Structural</span><span class="task-duration">4mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar engineering" style="left: 0px; width: 236px" data-task="Structural" data-start="0" data-duration="4" data-type="engineering" data-pct="95">
+                            Structural
+                        </div></div></div><div class="gantt-row " data-phase="engineering"><div class="task-cell task-indent-1"><span class="task-name">Architectural</span><span class="task-duration">3mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar engineering" style="left: 60px; width: 176px" data-task="Architectural" data-start="1" data-duration="3" data-type="engineering" data-pct="90">
+                            Architectural
+                        </div></div></div><div class="gantt-row " data-phase="engineering"><div class="task-cell task-indent-1"><span class="task-name">Mechanical</span><span class="task-duration">5mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar engineering" style="left: 0px; width: 296px" data-task="Mechanical" data-start="0" data-duration="5" data-type="engineering" data-pct="85">
+                            Mechanical
+                        </div></div></div><div class="gantt-row " data-phase="engineering"><div class="task-cell task-indent-1"><span class="task-name">Electrical</span><span class="task-duration">5mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar engineering" style="left: 0px; width: 296px" data-task="Electrical" data-start="0" data-duration="5" data-type="engineering" data-pct="80">
+                            Electrical
+                        </div></div></div><div class="gantt-row " data-phase="engineering"><div class="task-cell task-indent-1"><span class="task-name">Plumbing</span><span class="task-duration">3mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar engineering" style="left: 60px; width: 176px" data-task="Plumbing" data-start="1" data-duration="3" data-type="engineering" data-pct="75">
+                            Plumbing
+                        </div></div></div><div class="gantt-row " data-phase="engineering"><div class="task-cell task-indent-1"><span class="task-name">Fire Protection</span><span class="task-duration">3mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar engineering" style="left: 60px; width: 176px" data-task="Fire Protection" data-start="1" data-duration="3" data-type="engineering" data-pct="70">
+                            Fire Protection
+                        </div></div></div><div class="gantt-row phase-header" data-phase="engineering"><div class="task-cell "><span class="task-name">CUSTOMER DESIGN DELIVERABLES</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div></div></div><div class="gantt-row " data-phase="engineering"><div class="task-cell task-indent-1"><span class="task-name">Single Line Design</span><span class="task-duration">2mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar engineering" style="left: 0px; width: 116px" data-task="Single Line Design" data-start="0" data-duration="2" data-type="engineering" data-pct="100">
+                            Single Line Design
+                        </div></div></div><div class="gantt-row " data-phase="engineering"><div class="task-cell task-indent-1"><span class="task-name">Protection Study</span><span class="task-duration">3mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar engineering" style="left: 60px; width: 176px" data-task="Protection Study" data-start="1" data-duration="3" data-type="engineering" data-pct="85">
+                            Protection Study
+                        </div></div></div><div class="gantt-row " data-phase="engineering"><div class="task-cell task-indent-1"><span class="task-name">Load Flow / Arc Flash</span><span class="task-duration">3mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar engineering" style="left: 60px; width: 176px" data-task="Load Flow / Arc Flash" data-start="1" data-duration="3" data-type="engineering" data-pct="80">
+                            Load Flow / Arc Flash
+                        </div></div></div><div class="gantt-row " data-phase="engineering"><div class="task-cell task-indent-1"><span class="task-name">Grounding Design</span><span class="task-duration">2mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar engineering" style="left: 120px; width: 116px" data-task="Grounding Design" data-start="2" data-duration="2" data-type="engineering" data-pct="60">
+                            Grounding Design
+                        </div></div></div><div class="gantt-row phase-header" data-phase="procurement"><div class="task-cell "><span class="task-name">PROCUREMENT</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div></div></div><div class="gantt-row " data-phase="procurement"><div class="task-cell task-indent-1"><span class="task-name">MV Switchgear</span><span class="task-duration">8mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar procurement" style="left: 0px; width: 476px" data-task="MV Switchgear" data-start="0" data-duration="8" data-type="procurement" data-pct="45">
+                            MV Switchgear
+                        </div></div></div><div class="gantt-row " data-phase="procurement"><div class="task-cell task-indent-1"><span class="task-name">RMU</span><span class="task-duration">7mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar procurement" style="left: 0px; width: 416px" data-task="RMU" data-start="0" data-duration="7" data-type="procurement" data-pct="50">
+                            RMU
+                        </div></div></div><div class="gantt-row " data-phase="procurement"><div class="task-cell task-indent-1"><span class="task-name">Transformers</span><span class="task-duration">9mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar procurement" style="left: 60px; width: 536px" data-task="Transformers" data-start="1" data-duration="9" data-type="procurement" data-pct="35">
+                            Transformers
+                        </div></div></div><div class="gantt-row " data-phase="procurement"><div class="task-cell task-indent-1"><span class="task-name">LV Switchboards</span><span class="task-duration">10mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar procurement" style="left: 120px; width: 596px" data-task="LV Switchboards" data-start="2" data-duration="10" data-type="procurement" data-pct="25">
+                            LV Switchboards
+                        </div></div></div><div class="gantt-row " data-phase="procurement"><div class="task-cell task-indent-1"><span class="task-name">Chillers</span><span class="task-duration">12mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar procurement" style="left: 120px; width: 716px" data-task="Chillers" data-start="2" data-duration="12" data-type="procurement" data-pct="20">
+                            Chillers
+                        </div></div></div><div class="gantt-row " data-phase="procurement"><div class="task-cell task-indent-1"><span class="task-name">CRAHs</span><span class="task-duration">10mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar procurement" style="left: 180px; width: 596px" data-task="CRAHs" data-start="3" data-duration="10" data-type="procurement" data-pct="15">
+                            CRAHs
+                        </div></div></div><div class="gantt-row " data-phase="procurement"><div class="task-cell task-indent-1"><span class="task-name">UPS</span><span class="task-duration">9mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar procurement" style="left: 180px; width: 536px" data-task="UPS" data-start="3" data-duration="9" data-type="procurement" data-pct="18">
+                            UPS
+                        </div></div></div><div class="gantt-row " data-phase="procurement"><div class="task-cell task-indent-1"><span class="task-name">Generators</span><span class="task-duration">10mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar procurement" style="left: 60px; width: 596px" data-task="Generators" data-start="1" data-duration="10" data-type="procurement" data-pct="30">
+                            Generators
+                        </div></div></div><div class="gantt-row " data-phase="procurement"><div class="task-cell task-indent-1"><span class="task-name">ATS</span><span class="task-duration">8mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar procurement" style="left: 120px; width: 476px" data-task="ATS" data-start="2" data-duration="8" data-type="procurement" data-pct="22">
+                            ATS
+                        </div></div></div><div class="gantt-row " data-phase="procurement"><div class="task-cell task-indent-1"><span class="task-name">PDUs</span><span class="task-duration">8mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar procurement" style="left: 240px; width: 476px" data-task="PDUs" data-start="4" data-duration="8" data-type="procurement" data-pct="10">
+                            PDUs
+                        </div></div></div><div class="gantt-row " data-phase="procurement"><div class="task-cell task-indent-1"><span class="task-name">PEMB</span><span class="task-duration">6mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar procurement" style="left: 60px; width: 356px" data-task="PEMB" data-start="1" data-duration="6" data-type="procurement" data-pct="55">
+                            PEMB
+                        </div></div></div><div class="gantt-row phase-header" data-phase="construction"><div class="task-cell "><span class="task-name">SUBSTATION RETROFIT</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Equipment Procurement</span><span class="task-duration">6mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar substation" style="left: 120px; width: 356px" data-task="Equipment Procurement" data-start="2" data-duration="6" data-type="substation" data-pct="40">
+                            Equipment Procurement
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Civil/Structural Work</span><span class="task-duration">4mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar substation" style="left: 180px; width: 236px" data-task="Civil/Structural Work" data-start="3" data-duration="4" data-type="substation" data-pct="25">
+                            Civil/Structural Work
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Equipment Installation</span><span class="task-duration">3mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar substation" style="left: 420px; width: 176px" data-task="Equipment Installation" data-start="7" data-duration="3" data-type="substation" data-pct="0">
+                            Equipment Installation
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Testing &amp; Commissioning</span><span class="task-duration">2mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar substation" style="left: 540px; width: 116px" data-task="Testing &amp; Commissioning" data-start="9" data-duration="2" data-type="substation" data-pct="0">
+                            Testing &amp; Commissioning
+                        </div></div></div><div class="gantt-row phase-header" data-phase="construction"><div class="task-cell "><span class="task-name">GENERATOR YARD</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Civil Work</span><span class="task-duration">4mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar sitework" style="left: 180px; width: 236px" data-task="Civil Work" data-start="3" data-duration="4" data-type="sitework" data-pct="20">
+                            Civil Work
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Electrical Infrastructure</span><span class="task-duration">4mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar substation" style="left: 360px; width: 236px" data-task="Electrical Infrastructure" data-start="6" data-duration="4" data-type="substation" data-pct="0">
+                            Electrical Infrastructure
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Generator Installation</span><span class="task-duration">3mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar substation" style="left: 540px; width: 176px" data-task="Generator Installation" data-start="9" data-duration="3" data-type="substation" data-pct="0">
+                            Generator Installation
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Testing &amp; Commissioning</span><span class="task-duration">2mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar commissioning" style="left: 660px; width: 116px" data-task="Testing &amp; Commissioning" data-start="11" data-duration="2" data-type="commissioning" data-pct="0">
+                            Testing &amp; Commissioning
+                        </div></div></div><div class="gantt-row phase-header" data-phase="construction"><div class="task-cell "><span class="task-name">SITE WORK</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Mobilization &amp; Site Prep</span><span class="task-duration">2mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar sitework" style="left: 0px; width: 116px" data-task="Mobilization &amp; Site Prep" data-start="0" data-duration="2" data-type="sitework" data-pct="100">
+                            Mobilization &amp; Site Prep
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Grading &amp; Earthwork</span><span class="task-duration">4mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar sitework" style="left: 60px; width: 236px" data-task="Grading &amp; Earthwork" data-start="1" data-duration="4" data-type="sitework" data-pct="85">
+                            Grading &amp; Earthwork
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Underground Utilities</span><span class="task-duration">5mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar sitework" style="left: 120px; width: 296px" data-task="Underground Utilities" data-start="2" data-duration="5" data-type="sitework" data-pct="60">
+                            Underground Utilities
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Storm Drainage</span><span class="task-duration">4mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar sitework" style="left: 180px; width: 236px" data-task="Storm Drainage" data-start="3" data-duration="4" data-type="sitework" data-pct="45">
+                            Storm Drainage
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Paving &amp; Hardscape</span><span class="task-duration">6mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar sitework" style="left: 600px; width: 356px" data-task="Paving &amp; Hardscape" data-start="10" data-duration="6" data-type="sitework" data-pct="0">
+                            Paving &amp; Hardscape
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Fencing &amp; Security</span><span class="task-duration">4mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar sitework" style="left: 720px; width: 236px" data-task="Fencing &amp; Security" data-start="12" data-duration="4" data-type="sitework" data-pct="0">
+                            Fencing &amp; Security
+                        </div></div></div><div class="gantt-row phase-header" data-phase="construction"><div class="task-cell "><span class="task-name">BUILDING / FOUNDATIONS</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Foundation Excavation</span><span class="task-duration">3mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar building" style="left: 120px; width: 176px" data-task="Foundation Excavation" data-start="2" data-duration="3" data-type="building" data-pct="70">
+                            Foundation Excavation
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Foundation Concrete</span><span class="task-duration">4mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar building" style="left: 240px; width: 236px" data-task="Foundation Concrete" data-start="4" data-duration="4" data-type="building" data-pct="15">
+                            Foundation Concrete
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">PEMB Erection</span><span class="task-duration">5mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar building" style="left: 420px; width: 296px" data-task="PEMB Erection" data-start="7" data-duration="5" data-type="building" data-pct="0">
+                            PEMB Erection
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Roofing &amp; Envelope</span><span class="task-duration">4mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar building" style="left: 600px; width: 236px" data-task="Roofing &amp; Envelope" data-start="10" data-duration="4" data-type="building" data-pct="0">
+                            Roofing &amp; Envelope
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Interior MEP Rough-In</span><span class="task-duration">6mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar building" style="left: 720px; width: 356px" data-task="Interior MEP Rough-In" data-start="12" data-duration="6" data-type="building" data-pct="0">
+                            Interior MEP Rough-In
+                        </div></div></div><div class="gantt-row phase-header" data-phase="construction"><div class="task-cell "><span class="task-name">DATA MODULE 01 (DM01)</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Module Fabrication</span><span class="task-duration">4mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar datamodule" style="left: 240px; width: 236px" data-task="Module Fabrication" data-start="4" data-duration="4" data-type="datamodule" data-pct="10">
+                            Module Fabrication
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Module Delivery</span><span class="task-duration">1mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar datamodule" style="left: 420px; width: 56px" data-task="Module Delivery" data-start="7" data-duration="1" data-type="datamodule" data-pct="0">
+                            
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Module Set &amp; Connect</span><span class="task-duration">2mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar datamodule" style="left: 480px; width: 116px" data-task="Module Set &amp; Connect" data-start="8" data-duration="2" data-type="datamodule" data-pct="0">
+                            Module Set &amp; Connect
+                        </div></div></div><div class="gantt-row " data-phase="commissioning"><div class="task-cell task-indent-1"><span class="task-name">Testing &amp; Commissioning</span><span class="task-duration">2mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar commissioning" style="left: 540px; width: 116px" data-task="Testing &amp; Commissioning" data-start="9" data-duration="2" data-type="commissioning" data-pct="0">
+                            Testing &amp; Commissioning
+                        </div></div></div><div class="gantt-row " data-phase="commissioning"><div class="task-cell task-indent-1"><span class="task-name">RFS-1</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="milestone-marker" style="left: 610px" data-label="RFS-1" data-pct="0"></div></div></div><div class="gantt-row phase-header" data-phase="construction"><div class="task-cell "><span class="task-name">DATA MODULE 02 (DM02)</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Module Fabrication</span><span class="task-duration">4mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar datamodule" style="left: 300px; width: 236px" data-task="Module Fabrication" data-start="5" data-duration="4" data-type="datamodule" data-pct="5">
+                            Module Fabrication
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Module Delivery</span><span class="task-duration">1mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar datamodule" style="left: 540px; width: 56px" data-task="Module Delivery" data-start="9" data-duration="1" data-type="datamodule" data-pct="0">
+                            
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Module Set &amp; Connect</span><span class="task-duration">2mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar datamodule" style="left: 600px; width: 116px" data-task="Module Set &amp; Connect" data-start="10" data-duration="2" data-type="datamodule" data-pct="0">
+                            Module Set &amp; Connect
+                        </div></div></div><div class="gantt-row " data-phase="commissioning"><div class="task-cell task-indent-1"><span class="task-name">Testing &amp; Commissioning</span><span class="task-duration">2mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar commissioning" style="left: 660px; width: 116px" data-task="Testing &amp; Commissioning" data-start="11" data-duration="2" data-type="commissioning" data-pct="0">
+                            Testing &amp; Commissioning
+                        </div></div></div><div class="gantt-row " data-phase="commissioning"><div class="task-cell task-indent-1"><span class="task-name">RFS-2</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="milestone-marker" style="left: 730px" data-label="RFS-2" data-pct="0"></div></div></div><div class="gantt-row phase-header" data-phase="construction"><div class="task-cell "><span class="task-name">DATA MODULE 03 (DM03)</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Module Fabrication</span><span class="task-duration">4mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar datamodule" style="left: 480px; width: 236px" data-task="Module Fabrication" data-start="8" data-duration="4" data-type="datamodule" data-pct="0">
+                            Module Fabrication
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Module Delivery</span><span class="task-duration">1mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar datamodule" style="left: 720px; width: 56px" data-task="Module Delivery" data-start="12" data-duration="1" data-type="datamodule" data-pct="0">
+                            
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Module Set &amp; Connect</span><span class="task-duration">2mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar datamodule" style="left: 780px; width: 116px" data-task="Module Set &amp; Connect" data-start="13" data-duration="2" data-type="datamodule" data-pct="0">
+                            Module Set &amp; Connect
+                        </div></div></div><div class="gantt-row " data-phase="commissioning"><div class="task-cell task-indent-1"><span class="task-name">Testing &amp; Commissioning</span><span class="task-duration">2mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar commissioning" style="left: 900px; width: 116px" data-task="Testing &amp; Commissioning" data-start="15" data-duration="2" data-type="commissioning" data-pct="0">
+                            Testing &amp; Commissioning
+                        </div></div></div><div class="gantt-row phase-header" data-phase="construction"><div class="task-cell "><span class="task-name">DATA MODULE 04 (DM04)</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Module Fabrication</span><span class="task-duration">4mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar datamodule" style="left: 600px; width: 236px" data-task="Module Fabrication" data-start="10" data-duration="4" data-type="datamodule" data-pct="0">
+                            Module Fabrication
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Module Delivery</span><span class="task-duration">1mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar datamodule" style="left: 840px; width: 56px" data-task="Module Delivery" data-start="14" data-duration="1" data-type="datamodule" data-pct="0">
+                            
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Module Set &amp; Connect</span><span class="task-duration">2mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar datamodule" style="left: 900px; width: 116px" data-task="Module Set &amp; Connect" data-start="15" data-duration="2" data-type="datamodule" data-pct="0">
+                            Module Set &amp; Connect
+                        </div></div></div><div class="gantt-row " data-phase="commissioning"><div class="task-cell task-indent-1"><span class="task-name">Testing &amp; Commissioning</span><span class="task-duration">2mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar commissioning" style="left: 960px; width: 116px" data-task="Testing &amp; Commissioning" data-start="16" data-duration="2" data-type="commissioning" data-pct="0">
+                            Testing &amp; Commissioning
+                        </div></div></div><div class="gantt-row " data-phase="commissioning"><div class="task-cell task-indent-1"><span class="task-name">RFS-3 (DM03 + DM04)</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="milestone-marker" style="left: 1030px" data-label="RFS-3 (DM03 + DM04)" data-pct="0"></div></div></div><div class="gantt-row phase-header" data-phase="construction"><div class="task-cell "><span class="task-name">DATA MODULE 05 (DM05)</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Module Fabrication</span><span class="task-duration">5mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar datamodule" style="left: 960px; width: 296px" data-task="Module Fabrication" data-start="16" data-duration="5" data-type="datamodule" data-pct="0">
+                            Module Fabrication
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Module Delivery</span><span class="task-duration">1mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar datamodule" style="left: 1260px; width: 56px" data-task="Module Delivery" data-start="21" data-duration="1" data-type="datamodule" data-pct="0">
+                            
+                        </div></div></div><div class="gantt-row " data-phase="construction"><div class="task-cell task-indent-1"><span class="task-name">Module Set &amp; Connect</span><span class="task-duration">2mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar datamodule" style="left: 1320px; width: 116px" data-task="Module Set &amp; Connect" data-start="22" data-duration="2" data-type="datamodule" data-pct="0">
+                            Module Set &amp; Connect
+                        </div></div></div><div class="gantt-row " data-phase="commissioning"><div class="task-cell task-indent-1"><span class="task-name">Testing &amp; Commissioning</span><span class="task-duration">2mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar commissioning" style="left: 1380px; width: 116px" data-task="Testing &amp; Commissioning" data-start="23" data-duration="2" data-type="commissioning" data-pct="0">
+                            Testing &amp; Commissioning
+                        </div></div></div><div class="gantt-row " data-phase="commissioning"><div class="task-cell task-indent-1"><span class="task-name">RFS-4</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="milestone-marker" style="left: 1510px" data-label="RFS-4" data-pct="0"></div></div></div><div class="gantt-row phase-header" data-phase="commissioning"><div class="task-cell "><span class="task-name">COMMISSIONING &amp; CLOSEOUT</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div></div></div><div class="gantt-row " data-phase="commissioning"><div class="task-cell task-indent-1"><span class="task-name">Integrated Systems Testing</span><span class="task-duration">3mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar commissioning" style="left: 1320px; width: 176px" data-task="Integrated Systems Testing" data-start="22" data-duration="3" data-type="commissioning" data-pct="0">
+                            Integrated Systems Testing
+                        </div></div></div><div class="gantt-row " data-phase="commissioning"><div class="task-cell task-indent-1"><span class="task-name">Final Inspections</span><span class="task-duration">2mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar commissioning" style="left: 1440px; width: 116px" data-task="Final Inspections" data-start="24" data-duration="2" data-type="commissioning" data-pct="0">
+                            Final Inspections
+                        </div></div></div><div class="gantt-row " data-phase="commissioning"><div class="task-cell task-indent-1"><span class="task-name">Punch List &amp; Closeout</span><span class="task-duration">2mo</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="bar closeout" style="left: 1440px; width: 116px" data-task="Punch List &amp; Closeout" data-start="24" data-duration="2" data-type="closeout" data-pct="0">
+                            Punch List &amp; Closeout
+                        </div></div></div><div class="gantt-row " data-phase="commissioning"><div class="task-cell task-indent-1"><span class="task-name">Project Complete</span></div><div class="timeline-cell"><div class="grid-lines"><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line year-start"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div></div><div class="milestone-marker" style="left: 1510px" data-label="Project Complete" data-pct="0"></div></div></div></div>
+        </div>
+
+        <div class="summary-section">
+            <div class="summary-card">
+                <h3>RFS Milestones</h3>
+                <div class="phase-summary">
+                    <div class="phase-item">
+                        <span class="name">RFS-1 (DM01)</span>
+                        <span class="dates">Apr 28, 2026</span>
+                    </div>
+                    <div class="phase-item">
+                        <span class="name">RFS-2 (DM02)</span>
+                        <span class="dates">Jun 23, 2026</span>
+                    </div>
+                    <div class="phase-item">
+                        <span class="name">RFS-3 (DM03-04)</span>
+                        <span class="dates">Nov 24, 2026</span>
+                    </div>
+                    <div class="phase-item">
+                        <span class="name">RFS-4 (DM05)</span>
+                        <span class="dates">Jul 30, 2027</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <h3>Key Procurement Items</h3>
+                <div class="phase-summary">
+                    <div class="phase-item">
+                        <span class="name">MV Switchgear</span>
+                        <span class="dates">Jun 2025 - Feb 2026</span>
+                    </div>
+                    <div class="phase-item">
+                        <span class="name">Transformers</span>
+                        <span class="dates">Jul 2025 - Mar 2026</span>
+                    </div>
+                    <div class="phase-item">
+                        <span class="name">LV Switchboards</span>
+                        <span class="dates">Aug 2025 - Apr 2026</span>
+                    </div>
+                    <div class="phase-item">
+                        <span class="name">Chillers</span>
+                        <span class="dates">Aug 2025 - Jun 2026</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <h3>Construction Phases</h3>
+                <div class="phase-summary">
+                    <div class="phase-item">
+                        <span class="name">Substation Retrofit</span>
+                        <span class="dates">Aug 2025 - Apr 2026</span>
+                    </div>
+                    <div class="phase-item">
+                        <span class="name">Generator Yard</span>
+                        <span class="dates">Sep 2025 - Jun 2026</span>
+                    </div>
+                    <div class="phase-item">
+                        <span class="name">Site Work</span>
+                        <span class="dates">Jun 2025 - Oct 2026</span>
+                    </div>
+                    <div class="phase-item">
+                        <span class="name">Building &amp; Foundations</span>
+                        <span class="dates">Aug 2025 - Nov 2026</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip" style="left: 939px; top: 384px;">
+        <div class="tooltip-title">PDUs</div>
+        <div class="tooltip-content">
+                        <div class="tooltip-progress">
+                            <div class="progress-percentage low">10% Complete</div>
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">Status:</span>
+                                <span>Started</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill low" style="width: 10%"></div>
+                            </div>
+                        </div>
+                        <div class="tooltip-row" style="margin-top: 10px;">
+                            <span class="tooltip-label">Start:</span>
+                            <span>Oct 2025</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">End:</span>
+                            <span>May 2026</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">Duration:</span>
+                            <span>8 months</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">Category:</span>
+                            <span style="text-transform: capitalize">procurement</span>
+                        </div>
+                    </div>
+    </div>
+
+    <script>
+        // Project timeline: Jun 2025 to Jul 2027 (26 months)
+        const projectStart = new Date(2025, 5, 1); // June 2025
+        const projectEnd = new Date(2027, 6, 31); // July 2027
+        const totalMonths = 26;
+        const monthWidth = 60;
+
+        // Task definitions based on Barber Lake Schedule PDF with percentage complete
+        const tasks = [
+            // KEY MILESTONES
+            { id: 'milestones', name: 'KEY MILESTONES', phase: 'all', isPhase: true },
+            { id: 'm1', name: 'C&S Start Site Work', start: 0, duration: 0.5, type: 'milestone', phase: 'all', indent: 1, isMilestone: true, date: 'Jun 18, 2025', pctComplete: 100 },
+            { id: 'm2', name: 'Start Shell', start: 4, duration: 0.5, type: 'milestone', phase: 'all', indent: 1, isMilestone: true, date: 'Oct 06, 2025', pctComplete: 0 },
+            { id: 'm3', name: 'Shell Weather Tight', start: 7, duration: 0.5, type: 'milestone', phase: 'all', indent: 1, isMilestone: true, date: 'Jan 05, 2026', pctComplete: 0 },
+            { id: 'm4', name: 'RFS-1', start: 10, duration: 0.5, type: 'milestone', phase: 'all', indent: 1, isMilestone: true, date: 'Apr 28, 2026', pctComplete: 0 },
+            { id: 'm5', name: 'RFS-2', start: 12, duration: 0.5, type: 'milestone', phase: 'all', indent: 1, isMilestone: true, date: 'Jun 23, 2026', pctComplete: 0 },
+            { id: 'm6', name: 'RFS-3', start: 17, duration: 0.5, type: 'milestone', phase: 'all', indent: 1, isMilestone: true, date: 'Nov 24, 2026', pctComplete: 0 },
+            { id: 'm7', name: 'RFS-4', start: 25, duration: 0.5, type: 'milestone', phase: 'all', indent: 1, isMilestone: true, date: 'Jul 30, 2027', pctComplete: 0 },
+
+            // ENGINEERING
+            { id: 'eng', name: 'ENGINEERING', phase: 'engineering', isPhase: true },
+            { id: 'eng1', name: 'Civil', start: 0, duration: 3, type: 'engineering', phase: 'engineering', indent: 1, pctComplete: 100 },
+            { id: 'eng2', name: 'Structural', start: 0, duration: 4, type: 'engineering', phase: 'engineering', indent: 1, pctComplete: 95 },
+            { id: 'eng3', name: 'Architectural', start: 1, duration: 3, type: 'engineering', phase: 'engineering', indent: 1, pctComplete: 90 },
+            { id: 'eng4', name: 'Mechanical', start: 0, duration: 5, type: 'engineering', phase: 'engineering', indent: 1, pctComplete: 85 },
+            { id: 'eng5', name: 'Electrical', start: 0, duration: 5, type: 'engineering', phase: 'engineering', indent: 1, pctComplete: 80 },
+            { id: 'eng6', name: 'Plumbing', start: 1, duration: 3, type: 'engineering', phase: 'engineering', indent: 1, pctComplete: 75 },
+            { id: 'eng7', name: 'Fire Protection', start: 1, duration: 3, type: 'engineering', phase: 'engineering', indent: 1, pctComplete: 70 },
+
+            // CUSTOMER DESIGN DELIVERABLES
+            { id: 'cust', name: 'CUSTOMER DESIGN DELIVERABLES', phase: 'engineering', isPhase: true },
+            { id: 'cust1', name: 'Single Line Design', start: 0, duration: 2, type: 'engineering', phase: 'engineering', indent: 1, pctComplete: 100 },
+            { id: 'cust2', name: 'Protection Study', start: 1, duration: 3, type: 'engineering', phase: 'engineering', indent: 1, pctComplete: 85 },
+            { id: 'cust3', name: 'Load Flow / Arc Flash', start: 1, duration: 3, type: 'engineering', phase: 'engineering', indent: 1, pctComplete: 80 },
+            { id: 'cust4', name: 'Grounding Design', start: 2, duration: 2, type: 'engineering', phase: 'engineering', indent: 1, pctComplete: 60 },
+
+            // PROCUREMENT
+            { id: 'proc', name: 'PROCUREMENT', phase: 'procurement', isPhase: true },
+            { id: 'proc1', name: 'MV Switchgear', start: 0, duration: 8, type: 'procurement', phase: 'procurement', indent: 1, pctComplete: 45 },
+            { id: 'proc2', name: 'RMU', start: 0, duration: 7, type: 'procurement', phase: 'procurement', indent: 1, pctComplete: 50 },
+            { id: 'proc3', name: 'Transformers', start: 1, duration: 9, type: 'procurement', phase: 'procurement', indent: 1, pctComplete: 35 },
+            { id: 'proc4', name: 'LV Switchboards', start: 2, duration: 10, type: 'procurement', phase: 'procurement', indent: 1, pctComplete: 25 },
+            { id: 'proc5', name: 'Chillers', start: 2, duration: 12, type: 'procurement', phase: 'procurement', indent: 1, pctComplete: 20 },
+            { id: 'proc6', name: 'CRAHs', start: 3, duration: 10, type: 'procurement', phase: 'procurement', indent: 1, pctComplete: 15 },
+            { id: 'proc7', name: 'UPS', start: 3, duration: 9, type: 'procurement', phase: 'procurement', indent: 1, pctComplete: 18 },
+            { id: 'proc8', name: 'Generators', start: 1, duration: 10, type: 'procurement', phase: 'procurement', indent: 1, pctComplete: 30 },
+            { id: 'proc9', name: 'ATS', start: 2, duration: 8, type: 'procurement', phase: 'procurement', indent: 1, pctComplete: 22 },
+            { id: 'proc10', name: 'PDUs', start: 4, duration: 8, type: 'procurement', phase: 'procurement', indent: 1, pctComplete: 10 },
+            { id: 'proc11', name: 'PEMB', start: 1, duration: 6, type: 'procurement', phase: 'procurement', indent: 1, pctComplete: 55 },
+
+            // SUBSTATION RETROFIT
+            { id: 'sub', name: 'SUBSTATION RETROFIT', phase: 'construction', isPhase: true },
+            { id: 'sub1', name: 'Equipment Procurement', start: 2, duration: 6, type: 'substation', phase: 'construction', indent: 1, pctComplete: 40 },
+            { id: 'sub2', name: 'Civil/Structural Work', start: 3, duration: 4, type: 'substation', phase: 'construction', indent: 1, pctComplete: 25 },
+            { id: 'sub3', name: 'Equipment Installation', start: 7, duration: 3, type: 'substation', phase: 'construction', indent: 1, pctComplete: 0 },
+            { id: 'sub4', name: 'Testing & Commissioning', start: 9, duration: 2, type: 'substation', phase: 'construction', indent: 1, pctComplete: 0 },
+
+            // GENERATOR YARD
+            { id: 'gen', name: 'GENERATOR YARD', phase: 'construction', isPhase: true },
+            { id: 'gen1', name: 'Civil Work', start: 3, duration: 4, type: 'sitework', phase: 'construction', indent: 1, pctComplete: 20 },
+            { id: 'gen2', name: 'Electrical Infrastructure', start: 6, duration: 4, type: 'substation', phase: 'construction', indent: 1, pctComplete: 0 },
+            { id: 'gen3', name: 'Generator Installation', start: 9, duration: 3, type: 'substation', phase: 'construction', indent: 1, pctComplete: 0 },
+            { id: 'gen4', name: 'Testing & Commissioning', start: 11, duration: 2, type: 'commissioning', phase: 'construction', indent: 1, pctComplete: 0 },
+
+            // SITE WORK
+            { id: 'site', name: 'SITE WORK', phase: 'construction', isPhase: true },
+            { id: 'site1', name: 'Mobilization & Site Prep', start: 0, duration: 2, type: 'sitework', phase: 'construction', indent: 1, pctComplete: 100 },
+            { id: 'site2', name: 'Grading & Earthwork', start: 1, duration: 4, type: 'sitework', phase: 'construction', indent: 1, pctComplete: 85 },
+            { id: 'site3', name: 'Underground Utilities', start: 2, duration: 5, type: 'sitework', phase: 'construction', indent: 1, pctComplete: 60 },
+            { id: 'site4', name: 'Storm Drainage', start: 3, duration: 4, type: 'sitework', phase: 'construction', indent: 1, pctComplete: 45 },
+            { id: 'site5', name: 'Paving & Hardscape', start: 10, duration: 6, type: 'sitework', phase: 'construction', indent: 1, pctComplete: 0 },
+            { id: 'site6', name: 'Fencing & Security', start: 12, duration: 4, type: 'sitework', phase: 'construction', indent: 1, pctComplete: 0 },
+
+            // BUILDING / FOUNDATIONS
+            { id: 'bldg', name: 'BUILDING / FOUNDATIONS', phase: 'construction', isPhase: true },
+            { id: 'bldg1', name: 'Foundation Excavation', start: 2, duration: 3, type: 'building', phase: 'construction', indent: 1, pctComplete: 70 },
+            { id: 'bldg2', name: 'Foundation Concrete', start: 4, duration: 4, type: 'building', phase: 'construction', indent: 1, pctComplete: 15 },
+            { id: 'bldg3', name: 'PEMB Erection', start: 7, duration: 5, type: 'building', phase: 'construction', indent: 1, pctComplete: 0 },
+            { id: 'bldg4', name: 'Roofing & Envelope', start: 10, duration: 4, type: 'building', phase: 'construction', indent: 1, pctComplete: 0 },
+            { id: 'bldg5', name: 'Interior MEP Rough-In', start: 12, duration: 6, type: 'building', phase: 'construction', indent: 1, pctComplete: 0 },
+
+            // DATA MODULE 01
+            { id: 'dm01', name: 'DATA MODULE 01 (DM01)', phase: 'construction', isPhase: true },
+            { id: 'dm01_1', name: 'Module Fabrication', start: 4, duration: 4, type: 'datamodule', phase: 'construction', indent: 1, pctComplete: 10 },
+            { id: 'dm01_2', name: 'Module Delivery', start: 7, duration: 1, type: 'datamodule', phase: 'construction', indent: 1, pctComplete: 0 },
+            { id: 'dm01_3', name: 'Module Set & Connect', start: 8, duration: 2, type: 'datamodule', phase: 'construction', indent: 1, pctComplete: 0 },
+            { id: 'dm01_4', name: 'Testing & Commissioning', start: 9, duration: 2, type: 'commissioning', phase: 'commissioning', indent: 1, pctComplete: 0 },
+            { id: 'dm01_5', name: 'RFS-1', start: 10, duration: 0.5, type: 'milestone', phase: 'commissioning', indent: 1, isMilestone: true, pctComplete: 0 },
+
+            // DATA MODULE 02
+            { id: 'dm02', name: 'DATA MODULE 02 (DM02)', phase: 'construction', isPhase: true },
+            { id: 'dm02_1', name: 'Module Fabrication', start: 5, duration: 4, type: 'datamodule', phase: 'construction', indent: 1, pctComplete: 5 },
+            { id: 'dm02_2', name: 'Module Delivery', start: 9, duration: 1, type: 'datamodule', phase: 'construction', indent: 1, pctComplete: 0 },
+            { id: 'dm02_3', name: 'Module Set & Connect', start: 10, duration: 2, type: 'datamodule', phase: 'construction', indent: 1, pctComplete: 0 },
+            { id: 'dm02_4', name: 'Testing & Commissioning', start: 11, duration: 2, type: 'commissioning', phase: 'commissioning', indent: 1, pctComplete: 0 },
+            { id: 'dm02_5', name: 'RFS-2', start: 12, duration: 0.5, type: 'milestone', phase: 'commissioning', indent: 1, isMilestone: true, pctComplete: 0 },
+
+            // DATA MODULE 03
+            { id: 'dm03', name: 'DATA MODULE 03 (DM03)', phase: 'construction', isPhase: true },
+            { id: 'dm03_1', name: 'Module Fabrication', start: 8, duration: 4, type: 'datamodule', phase: 'construction', indent: 1, pctComplete: 0 },
+            { id: 'dm03_2', name: 'Module Delivery', start: 12, duration: 1, type: 'datamodule', phase: 'construction', indent: 1, pctComplete: 0 },
+            { id: 'dm03_3', name: 'Module Set & Connect', start: 13, duration: 2, type: 'datamodule', phase: 'construction', indent: 1, pctComplete: 0 },
+            { id: 'dm03_4', name: 'Testing & Commissioning', start: 15, duration: 2, type: 'commissioning', phase: 'commissioning', indent: 1, pctComplete: 0 },
+
+            // DATA MODULE 04
+            { id: 'dm04', name: 'DATA MODULE 04 (DM04)', phase: 'construction', isPhase: true },
+            { id: 'dm04_1', name: 'Module Fabrication', start: 10, duration: 4, type: 'datamodule', phase: 'construction', indent: 1, pctComplete: 0 },
+            { id: 'dm04_2', name: 'Module Delivery', start: 14, duration: 1, type: 'datamodule', phase: 'construction', indent: 1, pctComplete: 0 },
+            { id: 'dm04_3', name: 'Module Set & Connect', start: 15, duration: 2, type: 'datamodule', phase: 'construction', indent: 1, pctComplete: 0 },
+            { id: 'dm04_4', name: 'Testing & Commissioning', start: 16, duration: 2, type: 'commissioning', phase: 'commissioning', indent: 1, pctComplete: 0 },
+            { id: 'dm04_5', name: 'RFS-3 (DM03 + DM04)', start: 17, duration: 0.5, type: 'milestone', phase: 'commissioning', indent: 1, isMilestone: true, pctComplete: 0 },
+
+            // DATA MODULE 05
+            { id: 'dm05', name: 'DATA MODULE 05 (DM05)', phase: 'construction', isPhase: true },
+            { id: 'dm05_1', name: 'Module Fabrication', start: 16, duration: 5, type: 'datamodule', phase: 'construction', indent: 1, pctComplete: 0 },
+            { id: 'dm05_2', name: 'Module Delivery', start: 21, duration: 1, type: 'datamodule', phase: 'construction', indent: 1, pctComplete: 0 },
+            { id: 'dm05_3', name: 'Module Set & Connect', start: 22, duration: 2, type: 'datamodule', phase: 'construction', indent: 1, pctComplete: 0 },
+            { id: 'dm05_4', name: 'Testing & Commissioning', start: 23, duration: 2, type: 'commissioning', phase: 'commissioning', indent: 1, pctComplete: 0 },
+            { id: 'dm05_5', name: 'RFS-4', start: 25, duration: 0.5, type: 'milestone', phase: 'commissioning', indent: 1, isMilestone: true, pctComplete: 0 },
+
+            // COMMISSIONING & CLOSEOUT
+            { id: 'comm', name: 'COMMISSIONING & CLOSEOUT', phase: 'commissioning', isPhase: true },
+            { id: 'comm1', name: 'Integrated Systems Testing', start: 22, duration: 3, type: 'commissioning', phase: 'commissioning', indent: 1, pctComplete: 0 },
+            { id: 'comm2', name: 'Final Inspections', start: 24, duration: 2, type: 'commissioning', phase: 'commissioning', indent: 1, pctComplete: 0 },
+            { id: 'comm3', name: 'Punch List & Closeout', start: 24, duration: 2, type: 'closeout', phase: 'commissioning', indent: 1, pctComplete: 0 },
+            { id: 'comm4', name: 'Project Complete', start: 25, duration: 0.5, type: 'milestone', phase: 'commissioning', indent: 1, isMilestone: true, pctComplete: 0 }
+        ];
+
+        // Generate month labels
+        function generateMonthLabels() {
+            const header = document.getElementById('timeline-header');
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+            // Start from June 2025
+            let monthIndex = 5; // June
+            let year = 2025;
+
+            for (let i = 0; i < totalMonths; i++) {
+                const label = document.createElement('div');
+                const isYearStart = monthIndex === 0;
+                label.className = 'month-label' + (isYearStart ? ' year-start' : '');
+                label.textContent = months[monthIndex] + (monthIndex === 0 || i === 0 ? ` '${year.toString().slice(-2)}` : '');
+                header.appendChild(label);
+
+                monthIndex++;
+                if (monthIndex > 11) {
+                    monthIndex = 0;
+                    year++;
+                }
+            }
+        }
+
+        // Generate grid lines
+        function generateGridLines() {
+            let html = '';
+            let monthIndex = 5; // Start June
+            for (let i = 0; i < totalMonths; i++) {
+                const isYearStart = monthIndex === 0;
+                html += `<div class="grid-line${isYearStart ? ' year-start' : ''}"></div>`;
+                monthIndex++;
+                if (monthIndex > 11) monthIndex = 0;
+            }
+            return html;
+        }
+
+        // Render Gantt chart
+        function renderGantt(filter = 'all') {
+            const body = document.getElementById('gantt-body');
+            let html = '';
+
+            tasks.forEach(task => {
+                // Filter logic
+                if (filter !== 'all') {
+                    if (filter === 'engineering' && task.phase !== 'engineering') return;
+                    if (filter === 'procurement' && task.phase !== 'procurement') return;
+                    if (filter === 'construction' && task.phase !== 'construction') return;
+                    if (filter === 'commissioning' && task.phase !== 'commissioning') return;
+                }
+
+                const indentClass = task.indent ? `task-indent-${task.indent}` : '';
+                const phaseClass = task.isPhase ? 'phase-header' : '';
+
+                html += `<div class="gantt-row ${phaseClass}" data-phase="${task.phase}">`;
+                html += `<div class="task-cell ${indentClass}">`;
+                html += `<span class="task-name">${task.name}</span>`;
+                if (task.duration && !task.isPhase && !task.isMilestone) {
+                    html += `<span class="task-duration">${task.duration}mo</span>`;
+                }
+                if (task.date) {
+                    html += `<span class="task-duration">${task.date}</span>`;
+                }
+                html += `</div>`;
+
+                html += `<div class="timeline-cell">`;
+                html += `<div class="grid-lines">${generateGridLines()}</div>`;
+
+                if (task.start !== undefined && task.duration) {
+                    const left = task.start * monthWidth;
+                    const width = Math.max(task.duration * monthWidth - 4, 20);
+                    const pctComplete = task.pctComplete !== undefined ? task.pctComplete : 0;
+
+                    if (task.isMilestone) {
+                        html += `<div class="milestone-marker" style="left: ${left + 10}px" data-label="${task.name}" data-pct="${pctComplete}"></div>`;
+                    } else {
+                        html += `<div class="bar ${task.type}" style="left: ${left}px; width: ${width}px"
+                            data-task="${task.name}"
+                            data-start="${task.start}"
+                            data-duration="${task.duration}"
+                            data-type="${task.type}"
+                            data-pct="${pctComplete}">
+                            ${width > 80 ? task.name : ''}
+                        </div>`;
+                    }
+                }
+
+                html += `</div></div>`;
+            });
+
+            body.innerHTML = html;
+            attachBarListeners();
+        }
+
+        // Tooltip functionality
+        function attachBarListeners() {
+            const tooltip = document.getElementById('tooltip');
+            const bars = document.querySelectorAll('.bar');
+
+            // Helper function to get progress class based on percentage
+        function getProgressClass(pct) {
+            if (pct >= 100) return 'complete';
+            if (pct >= 75) return 'high';
+            if (pct >= 25) return 'medium';
+            if (pct > 0) return 'low';
+            return 'not-started';
+        }
+
+        // Helper function to get progress label
+        function getProgressLabel(pct) {
+            if (pct >= 100) return 'Complete';
+            if (pct >= 75) return 'On Track';
+            if (pct >= 25) return 'In Progress';
+            if (pct > 0) return 'Started';
+            return 'Not Started';
+        }
+
+        bars.forEach(bar => {
+                bar.addEventListener('mouseenter', (e) => {
+                    const task = bar.dataset.task;
+                    const startMonth = parseInt(bar.dataset.start);
+                    const duration = parseFloat(bar.dataset.duration);
+                    const type = bar.dataset.type;
+                    const pctComplete = parseInt(bar.dataset.pct) || 0;
+                    const progressClass = getProgressClass(pctComplete);
+                    const progressLabel = getProgressLabel(pctComplete);
+
+                    // Calculate actual dates from June 2025
+                    const startDate = new Date(2025, 5 + startMonth, 1);
+                    const endDate = new Date(2025, 5 + startMonth + Math.ceil(duration), 0);
+
+                    const formatDate = (d) => d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
+                    tooltip.querySelector('.tooltip-title').textContent = task;
+                    tooltip.querySelector('.tooltip-content').innerHTML = `
+                        <div class="tooltip-progress">
+                            <div class="progress-percentage ${progressClass}">${pctComplete}% Complete</div>
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">Status:</span>
+                                <span>${progressLabel}</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill ${progressClass}" style="width: ${pctComplete}%"></div>
+                            </div>
+                        </div>
+                        <div class="tooltip-row" style="margin-top: 10px;">
+                            <span class="tooltip-label">Start:</span>
+                            <span>${formatDate(startDate)}</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">End:</span>
+                            <span>${formatDate(endDate)}</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">Duration:</span>
+                            <span>${duration} months</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">Category:</span>
+                            <span style="text-transform: capitalize">${type}</span>
+                        </div>
+                    `;
+
+                    tooltip.classList.add('visible');
+                });
+
+                bar.addEventListener('mousemove', (e) => {
+                    tooltip.style.left = e.clientX + 15 + 'px';
+                    tooltip.style.top = e.clientY + 15 + 'px';
+                });
+
+                bar.addEventListener('mouseleave', () => {
+                    tooltip.classList.remove('visible');
+                });
+            });
+        }
+
+        // Filter functionality
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                renderGantt(btn.dataset.filter);
+            });
+        });
+
+        // Initialize
+        generateMonthLabels();
+        renderGantt();
+    </script>
+
+
+</body></html>
